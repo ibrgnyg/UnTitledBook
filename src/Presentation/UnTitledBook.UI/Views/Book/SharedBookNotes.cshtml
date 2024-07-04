@@ -1,0 +1,107 @@
+﻿@{
+    ViewData["Title"] = "SharedBooks";
+}
+
+<div class="container light-style flex-grow-1 container-p-y">
+    <div class="card overflow-hidden">
+        <div class="row no-gutters row-bordered row-border-light">
+            <div class="col-md-3 pt-0">
+                <div class="list-group list-group-flush account-settings-links">
+                    <a class="list-group-item list-group-item-action active" href="/user/profile">Profil</a>
+                    <a class="list-group-item list-group-item-action" href="/user/profile#account-change-password">Şifre değiştir</a>
+                    <a class="list-group-item list-group-item-action" href="/book">Kitaplar</a>
+                    <a class="list-group-item list-group-item-action" href="/user/friends">Arkadaşlar</a>
+                    <a class="list-group-item list-group-item-action" href="/book/sharedbooknotes">Paylaşılan notlar</a>
+                    <a class="btn btn-primary btn-sm" onclick="logout()">Çıkış yap</a>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="tab-content">
+                    <div class="tab-pane fade active show" id="account-general">
+                        <div class="list-group mt-3" id="noteList">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    var userId = localStorage.getItem('userId');
+    var token = localStorage.getItem('token');
+    var bId = "";
+    window.onload = function () {
+
+        if (userId == null || token == null) {
+            window.location.href = "/user/login";
+            return;
+        }
+        getSharedNotes();
+    };
+
+    function getSharedNotes() {
+        axios.get(`/api/Note/sharedNotes?userId=${userId}`, {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(response => {
+                const notes = response.data;
+                console.log(notes);
+                renderNotes(notes);
+            })
+            .catch(error => {
+                console.error('Error fetching notes:', error);
+            });
+    }
+
+    function renderNotes(notes) {
+        const noteList = document.getElementById('noteList');
+        noteList.innerHTML = '';
+
+        notes.forEach((note, index) => {
+            const listItem = document.createElement('a');
+            listItem.href = '#';
+            listItem.classList.add('list-group-item', 'list-group-item-action', 'flex-column', 'align-items-start');
+
+            const innerHTML =
+                `
+                    <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">${note.content}</h5>
+                            <small class="text-muted">${formatDate(note.createdDate)}</small>
+                    </div>
+                    <br/>
+                        Kitap ismi : <p class="mb-1">${note.book.name}</p>
+                        Yazar : <small class="text-muted">${note.book.author}</small>
+                    <small class="text-muted"><span> ${getTypeText(note.noteType)}<span/></small>
+                `;
+
+            listItem.innerHTML = innerHTML;
+            noteList.appendChild(listItem);
+        });
+    }
+
+    function formatDate(inputDate) {
+        const date = new Date(inputDate);
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return date.toLocaleDateString('tr-TR', options);
+    }
+
+    function getTypeText(type) {
+        switch (type) {
+            case 1:
+                return 'Bunu Sadece Sen Görebilirsin';
+            case 2:
+                return 'Herkese Açık';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('token');
+        localStorage.removeItem('currentUser');
+        window.location.href = "/user/login";
+    }
+</script>

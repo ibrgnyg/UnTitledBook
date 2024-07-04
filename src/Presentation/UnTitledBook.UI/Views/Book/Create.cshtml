@@ -1,0 +1,227 @@
+﻿@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Yeni Kitap Ekle</h1>
+
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link active" id="tab1-link" href="#" onclick="showTab(event, 'tab1')">Kitap Bilgisi</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link disabled" id="tab2-link" href="#" onclick="showTab(event, 'tab2')">Notlar</a>
+    </li>
+</ul>
+
+<div id="tab1" class="tab-content">
+    <div class="row">
+        <div class="col-md-8">
+            <form>
+                <div class="form-group">
+                    <label class="control-label">Kitap ID</label>
+                    <div class="d-inline-flex p-2" id="bookId" required></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitap ismi</label>
+                    <input class="form-control" name="name" id="name" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Açıklama</label>
+                    <textarea class="form-control" name="description" id="description" required></textarea>
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Yazar</label>
+                    <input class="form-control" name="author" id="author" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">ISBN numarası</label>
+                    <input class="form-control" name="isbn" id="isbn" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitabın bulunduğu oda</label>
+                    <input class="form-control" name="room" id="room" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitabın bulunduğu bölüm</label>
+                    <input class="form-control" name="section" id="section" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitabın bulunduğu raf numarası</label>
+                    <input class="form-control" name="shelfnumber" id="shelfnumber" required />
+                    <span class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Resim</label>
+                    <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+                    <br>
+                    <img id="preview" alt="Preview Image">
+                </div>
+
+                <br />
+                <div class="form-group">
+                    <input type="button" onclick="saveBook();" value="Kaydet" class="btn btn-success btn-sm" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div id="tab2" class="tab-content" style="display: none;">
+    <p>Note içeriği</p>
+    <div class="container mt-4">
+        <h3>Books List</h3>
+        <div class="list-group mt-3">
+            <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Book Title 2</h5>
+                    <small class="text-muted">3 days ago</small>
+                </div>
+                <p class="mb-1">Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</p>
+                <small class="text-muted">Donec id elit non mi porta.</small>
+                <div class="d-flex justify-content-end mt-2">
+                    <a href="#" class="btn btn-primary btn-sm mr-2" role="button">Edit</a>
+                    <a href="#" class="btn btn-danger btn-sm" role="button">Delete</a>
+                </div>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Book Title 3</h5>
+                    <small class="text-muted">3 days ago</small>
+                </div>
+                <p class="mb-1">Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</p>
+                <small class="text-muted">Donec id elit non mi porta.</small>
+                <div class="d-flex justify-content-end mt-2">
+                    <a href="#" class="btn btn-primary btn-sm mr-2" role="button">Edit</a>
+                    <a href="#" class="btn btn-danger btn-sm" role="button">Delete</a>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script>
+    var userId = localStorage.getItem('userId');
+    var token = localStorage.getItem('token');
+    window.onload = function () {
+
+        if (userId == null || token == null) {
+            window.location.href = "/user/login";
+            return;
+        }
+    };
+
+    var bId = "";
+
+    function saveBook() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        let model = {
+            Name: $("#name").val(),
+            Description: $("#description").val(),
+            Author: $("#author").val(),
+            UserId: userId,
+            Isbn: $("#isbn").val(),
+            ShelfLocation: $("#shelflocation").val(),
+            Room: $("#room").val(),
+            Section: $("#section").val(),
+            ShelfNumber: $("#shelfnumber").val(),
+            File: file
+        };
+
+        axios.post('/api/Book/addBook', model, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'text/plain',
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(function (response) {
+                console.log(response);
+                if (!response.data.isError) {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        newWindow: true,
+                        close: true,
+                        gravity: "top",
+                        position: "right",
+                        stopOnFocus: true,
+                        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                    }).showToast();
+
+                    var bookId = response.data.fields.BookId;
+                    bId = bookId;
+                    $("#bookId").text(bookId);
+                    window.location.href = `/book/edit?id=${bookId}`;
+                }
+                else {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "linear-gradient(to right, #ff4b1f, #ff9068)",
+                        stopOnFocus: true
+                    }).showToast();
+                }
+            })
+            .catch(function (error) {
+                console.error('Axios error:', error);
+            });
+    }
+
+
+    function previewImage(event) {
+        var input = event.target;
+        var image = document.getElementById('preview');
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                image.src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function showTab(event, tabId) {
+        event.preventDefault();
+
+        const tabLinks = document.querySelectorAll('.nav-link');
+        tabLinks.forEach(link => link.classList.remove('active'));
+
+        event.currentTarget.classList.add('active');
+
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.style.display = 'none');
+
+        const selectedTab = document.getElementById(tabId);
+        selectedTab.style.display = 'block';
+    }
+
+    function enableTab(tabId) {
+        const tabLink = document.getElementById(tabId + '-link');
+        tabLink.classList.remove('disabled');
+    }
+
+</script>
+
+<style>
+    #preview {
+        width: 300px;
+        height: 300px;
+    }
+</style>

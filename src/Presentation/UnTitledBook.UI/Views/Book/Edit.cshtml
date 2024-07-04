@@ -1,0 +1,539 @@
+﻿@model string
+@{
+    ViewData["Title"] = "Edit";
+
+    string id = Context.Request.Query["id"].ToString();
+}
+
+<h1>Kitap Güncelle</h1>
+
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link active" id="tab1-link" href="#" onclick="showTab(event, 'tab1')">Kitap Bilgisi</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="tab2-link" href="#" onclick="showTab(event, 'tab2')">Notlar</a>
+    </li>
+</ul>
+
+<div id="tab1" class="tab-content">
+    <div class="row">
+        <div class="col-md-8">
+            <form>
+                <div class="form-group">
+                    <label class="control-label">Kitap ID</label>
+                    <div class="d-inline-flex p-2">@id</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitap ismi</label>
+                    <input class="form-control" name="name" id="name" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Açıklama</label>
+                    <textarea class="form-control" name="description" id="description" required></textarea>
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Yazar</label>
+                    <input class="form-control" name="author" id="author" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">ISBN numarası</label>
+                    <input class="form-control" name="isbn" id="isbn" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitabın bulunduğu oda</label>
+                    <input class="form-control" name="room" id="room" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitabın bulunduğu bölüm</label>
+                    <input class="form-control" name="section" id="section" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Kitabın bulunduğu raf numarası</label>
+                    <input class="form-control" name="shelfnumber" id="shelfnumber" required />
+                    <span class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">Resim</label>
+                    <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+                    <br>
+                    <img id="preview" alt="Preview Image">
+                </div>
+
+                <br />
+                <div class="form-group">
+                    <input type="button" onclick="saveBook();" value="Kaydet" class="btn btn-success btn-sm" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div id="tab2" class="tab-content" style="display: none;">
+    <p>Note içeriği</p>
+    <div class="container mt-4">
+        <div class="container mt-5">
+            <h2>Not Ekle</h2>
+            <form>
+                <div class="form-group">
+                    <label for="noteText">Not</label>
+                    <textarea class="form-control" id="content" name="content" rows="3" placeholder="Notunuzu buraya yazın..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="noteType">Not Tipi</label>
+                    <select class="form-control" id="noteType" onchange="toggleFriendList()">
+                        <option value="2">Herkese Açık</option>
+                        <option value="1">Sadece Arkadaşlar</option>
+                        <option value="0">Özel</option>
+                    </select>
+                </div>
+                <div class="form-group" id="friendListGroup" style="display: none;">
+                    <label for="friendList">Arkadaş Seçin</label>
+                    <select class="form-control" id="friendList" multiple>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="addNote();">Kaydet</button>
+            </form>
+        </div>
+
+        <div class="list-group mt-3" id="noteList">
+        </div>
+    </div>
+
+    <div class="modal fade" id="editNoteModal" tabindex="-1" aria-labelledby="editNoteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editNoteModalLabel">Notu Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editNoteForm">
+                        <div class="mb-3">
+                            <label for="noteContent" class="form-label">Not İçeriği</label>
+                            <textarea class="form-control" id="noteContent" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="noteType" class="form-label">Not Tipi</label>
+                            <select class="form-control" id="noteType">
+                                <option value="2">Herkese Açık</option>
+                                <option value="0">Özel</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="btn btn-primary" id="saveNoteChanges">Değişiklikleri Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script>
+    var userId = localStorage.getItem('userId');
+    var token = localStorage.getItem('token');
+    var bId = "";
+    var allnotes = [];
+    window.onload = function () {
+
+        if (userId == null || token == null) {
+            window.location.href = "/user/login";
+            return;
+        }
+        getBook();
+    };
+
+    function getBook() {
+        axios.get(`/api/Book/@id`, {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(response => {
+                const book = response.data;
+                console.log(book);
+                $("#name").val(book.name);
+                $("#description").val(book.description);
+                $("#author").val(book.author);
+                $("#isbn").val(book.isbn);
+                $("#room").val(book.room);
+                $("#section").val(book.section);
+                $("#shelfnumber").val(book.shelfNumber);
+                $("#preview").attr("src", book.imagePath);
+                getNotes();
+            })
+            .catch(error => {
+                console.error('Error fetching books:', error);
+            });
+    }
+
+    function saveBook() {
+        let model = {
+            Id: "@id",
+            Name: $("#name").val(),
+            Description: $("#description").val(),
+            Author: $("#author").val(),
+            UserId: userId,
+            Isbn: $("#isbn").val(),
+            Room: $("#room").val(),
+            Section: $("#section").val(),
+            ShelfNumber: $("#shelfnumber").val(),
+            //File: fileInput.files[0]
+        };
+
+        axios.put('/api/Book/updateBook', model, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'text/plain',
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(function (response) {
+                console.log(response);
+                if (!response.data.isError) {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        newWindow: true,
+                        close: true,
+                        gravity: "top",
+                        position: "right",
+                        stopOnFocus: true,
+                        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                    }).showToast();
+
+                    var bookId = response.data.fields.BookId;
+                    bId = bookId;
+                    $("#bookId").text(bookId);
+                }
+                else {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "linear-gradient(to right, #ff4b1f, #ff9068)",
+                        stopOnFocus: true
+                    }).showToast();
+                }
+            })
+            .catch(function (error) {
+                console.error('Axios error:', error);
+            });
+    }
+
+    function getFriends() {
+        axios.get(`/api/Friend/friendsLists/${userId}`, {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(response => {
+                const friends = response.data;
+                console.log(friends);
+                const friendList = document.getElementById('friendList');
+                friendList.innerHTML = '';
+
+                friends.forEach(friend => {
+                    const option = document.createElement('option');
+                    option.value = friend.friend.id;
+                    option.textContent = friend.friend.userName;
+                    friendList.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching friends:', error);
+            });
+    }
+
+
+    function addNote() {
+        var noteType = document.getElementById('noteType').value;
+
+        const friendList = document.getElementById('friendList');
+        const selectedFriends = [];
+        for (let i = 0; i < friendList.options.length; i++) {
+            if (friendList.options[i].selected) {
+                selectedFriends.push(friendList.options[i].value);
+            }
+        }
+
+        let model = {
+            Content: $("#content").val(),
+            NoteType: parseInt(noteType),
+            BookId: "@id",
+            UserId: userId,
+            FriendIds: selectedFriends
+        };
+
+        axios.post('/api/Note/addNote', model, {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(function (response) {
+                console.log(response);
+                if (!response.data.isError) {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        newWindow: true,
+                        close: true,
+                        gravity: "top",
+                        position: "right",
+                        stopOnFocus: true,
+                        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                    }).showToast();
+                    $("#content").val(""),
+                        getNotes();
+                }
+                else {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "linear-gradient(to right, #ff4b1f, #ff9068)",
+                        stopOnFocus: true
+                    }).showToast();
+                }
+            })
+            .catch(function (error) {
+                console.error('Axios error:', error);
+            });
+    }
+
+    function getNotes() {
+        let = bookId = "@id";
+        axios.get(`/api/Note/noteBooks?bookId=${bookId}&userId=${userId}`, {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(response => {
+                const notes = response.data;
+                allnotes = notes;
+                console.log(notes);
+                renderNote(notes);
+            })
+            .catch(error => {
+                console.error('Error fetching notes:', error);
+            });
+
+    }
+
+    function renderNote(notes) {
+        const noteList = document.getElementById('noteList');
+        noteList.innerHTML = '';
+
+        notes.forEach((note, index) => {
+            const listItem = document.createElement('a');
+            listItem.href = '#';
+            listItem.classList.add('list-group-item', 'list-group-item-action', 'flex-column', 'align-items-start');
+
+            let innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">${note.content}</h5>
+                    <small class="text-muted">${formatDate(note.createdDate)}</small>
+                </div>
+                <small class="text-muted"><span>${getTypeText(note.noteType)}</span></small>`;
+
+            if (note.friend) {
+                innerHTML += `
+                    <br/>
+                    <small class="text-muted"><span>Arkadaş ismi : ${note.friend.userName}</span></small>`;
+            } else {
+            }
+
+            innerHTML += `
+                <div class="d-flex justify-content-end mt-2">
+                         <button class="btn btn-primary btn-sm mr-2" onclick="openEditModal('${note.id}');" role="button">Düzenle</button>
+                    <button class="btn btn-danger btn-sm" onclick="confirmDelete('${note.id}');" role="button">Sil</button>
+                </div>
+            `;
+
+            listItem.innerHTML = innerHTML;
+            noteList.appendChild(listItem);
+        });
+    }
+
+    function formatDate(inputDate) {
+        const date = new Date(inputDate);
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return date.toLocaleDateString('tr-TR', options);
+    }
+
+    function getTypeText(type) {
+        switch (type) {
+            case 0:
+                return 'Özel';
+            case 1:
+                return 'Sadece Arkadaşlar';
+            case 2:
+                return 'Herkese Açık';
+        }
+    }
+
+    function confirmDelete(noteId) {
+        if (confirm("Bu notu silmek istediğinizden emin misiniz?")) {
+            axios.delete(`/api/Note/deleteNote/${noteId}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+                .then(response => {
+                    console.log(response.data);
+                    if (!response.data.isError) {
+                        Toastify({
+                            text: response.data.message,
+                            duration: 3000,
+                            newWindow: true,
+                            close: true,
+                            gravity: "top",
+                            position: "right",
+                            stopOnFocus: true,
+                            backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                        }).showToast();
+                        getNotes();
+                    } else {
+                        Toastify({
+                            text: response.data.message,
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "linear-gradient(to right, #ff4b1f, #ff9068)",
+                            stopOnFocus: true
+                        }).showToast();
+                    }
+                })
+                .catch(error => {
+                    console.error('Not silinirken hata oluştu:', error);
+                });
+        } else {
+            console.log(`Not silme işlemi iptal edildi: ${noteId}`);
+        }
+    }
+
+    function showTab(event, tabId) {
+        event.preventDefault();
+
+        const tabLinks = document.querySelectorAll('.nav-link');
+        tabLinks.forEach(link => link.classList.remove('active'));
+
+        event.currentTarget.classList.add('active');
+
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.style.display = 'none');
+
+        const selectedTab = document.getElementById(tabId);
+        selectedTab.style.display = 'block';
+    }
+
+    function toggleFriendList() {
+        var noteType = document.getElementById('noteType').value;
+        var friendListGroup = document.getElementById('friendListGroup');
+
+        if (noteType === '1') {
+            friendListGroup.style.display = 'block';
+            getFriends();
+        } else {
+            friendListGroup.style.display = 'none';
+        }
+    }
+
+    var ndId = "";
+    function openEditModal(noteId) {
+
+        ndId = noteId;
+
+        const note = allnotes.find(n => n.id === noteId); 
+
+        document.getElementById('noteContent').value = note.content;
+        document.getElementById('noteType').value = note.noteType;
+
+        const editNoteModal = new bootstrap.Modal(document.getElementById('editNoteModal'));
+        editNoteModal.show();
+    }
+
+
+    document.getElementById('saveNoteChanges').addEventListener('click', function () {
+
+        const updatedContent = document.getElementById('noteContent').value;
+        const updatedNoteType = document.getElementById('noteType').value;
+
+        updateNote(updatedContent, updatedNoteType); 
+    });
+
+    function updateNote(content, noteType) {
+
+        let model = {
+            Content: content,
+            NoteType: parseInt(noteType),
+            BookId: "@id",
+            UserId: userId,
+            FriendIds: []
+        };
+
+        axios.put(`/api/Note/updateNote?id=${ndId}`, model, {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+            .then(response => {
+                if (!response.data.isError) {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        newWindow: true,
+                        close: true,
+                        gravity: "top",
+                        position: "right",
+                        stopOnFocus: true,
+                        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                    }).showToast();
+                    $("#content").val(""),
+                        getNotes();
+                }
+                else {
+                    Toastify({
+                        text: response.data.message,
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "linear-gradient(to right, #ff4b1f, #ff9068)",
+                        stopOnFocus: true
+                    }).showToast();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating note:', error);
+            });
+    }
+
+
+</script>
+
+<style>
+    #preview {
+        width: 300px;
+        height: 300px;
+    }
+</style>
