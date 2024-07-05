@@ -76,7 +76,7 @@
 
                 <br />
                 <div class="form-group">
-                    <input type="button" onclick="saveBook();" value="Kaydet" class="btn btn-success btn-sm" />
+                    <input type="button" onclick="updateBook();" value="Kaydet" class="btn btn-success btn-sm" />
                 </div>
             </form>
         </div>
@@ -113,7 +113,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editNoteModal" tabindex="-1" aria-labelledby="editNoteModalLabel" aria-hidden="true">
+        <div class="modal fade" id="editNoteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -136,7 +136,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
                     <button type="button" class="btn btn-primary" id="saveNoteChanges">Değişiklikleri Kaydet</button>
                 </div>
             </div>
@@ -185,7 +185,9 @@
             });
     }
 
-    function saveBook() {
+    function updateBook() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
         let model = {
             Id: "@id",
             Name: $("#name").val(),
@@ -196,7 +198,7 @@
             Room: $("#room").val(),
             Section: $("#section").val(),
             ShelfNumber: $("#shelfnumber").val(),
-            //File: fileInput.files[0]
+            File: fileInput.files[0]
         };
 
         axios.put('/api/Book/updateBook', model, {
@@ -350,25 +352,25 @@
             listItem.classList.add('list-group-item', 'list-group-item-action', 'flex-column', 'align-items-start');
 
             let innerHTML = `
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">${note.content}</h5>
-                    <small class="text-muted">${formatDate(note.createdDate)}</small>
-                </div>
-                <small class="text-muted"><span>${getTypeText(note.noteType)}</span></small>`;
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">${note.content}</h5>
+                        <small class="text-muted">${formatDate(note.createdDate)}</small>
+                    </div>
+                    <small class="text-muted"><span>${getTypeText(note.noteType)}</span></small>`;
 
             if (note.friend) {
                 innerHTML += `
-                    <br/>
-                    <small class="text-muted"><span>Arkadaş ismi : ${note.friend.userName}</span></small>`;
+                        <br/>
+                        <small class="text-muted"><span>Arkadaş ismi : ${note.friend.userName}</span></small>`;
             } else {
             }
 
             innerHTML += `
-                <div class="d-flex justify-content-end mt-2">
-                         <button class="btn btn-primary btn-sm mr-2" onclick="openEditModal('${note.id}');" role="button">Düzenle</button>
-                    <button class="btn btn-danger btn-sm" onclick="confirmDelete('${note.id}');" role="button">Sil</button>
-                </div>
-            `;
+                    <div class="d-flex justify-content-end mt-2">
+                             <button class="btn btn-primary btn-sm mr-2" onclick="openEditModal('${note.id}');" role="button">Düzenle</button>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${note.id}');" role="button">Sil</button>
+                    </div>
+                `;
 
             listItem.innerHTML = innerHTML;
             noteList.appendChild(listItem);
@@ -464,7 +466,7 @@
 
         ndId = noteId;
 
-        const note = allnotes.find(n => n.id === noteId); 
+        const note = allnotes.find(n => n.id === noteId);
 
         document.getElementById('noteContent').value = note.content;
         document.getElementById('noteType').value = note.noteType;
@@ -479,7 +481,7 @@
         const updatedContent = document.getElementById('noteContent').value;
         const updatedNoteType = document.getElementById('noteType').value;
 
-        updateNote(updatedContent, updatedNoteType); 
+        updateNote(updatedContent, updatedNoteType);
     });
 
     function updateNote(content, noteType) {
@@ -509,8 +511,10 @@
                         stopOnFocus: true,
                         backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
                     }).showToast();
-                    $("#content").val(""),
-                        getNotes();
+                    $("#content").val("");
+                    const editNoteModal = new bootstrap.Modal(document.getElementById('editNoteModal'));
+                    editNoteModal.hide();
+                    getNotes();
                 }
                 else {
                     Toastify({
@@ -528,7 +532,17 @@
             });
     }
 
-
+    function previewImage(event) {
+        var input = event.target;
+        var image = document.getElementById('preview');
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                image.src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 </script>
 
 <style>

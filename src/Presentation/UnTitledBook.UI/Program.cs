@@ -14,15 +14,15 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllers();
 
+var info = new OpenApiInfo()
+{
+    Title = "Kitaplýk Arþiv API  Dökümaný",
+    Version = "v1",
+    Description = "Bu projede kullanýcýlar üye olma ve giriþ yapma iþlemlerini gerçekleþtirebilir. Giriþ yapan kullanýcýlar kitap ekleyebilir ve diðer kullanýcýlarý arkadaþ olarak ekleyebilirler. Ayrýca, kullanýcýlar kitaplarla ilgili notlar ekleyebilir ve bu notlarý herkese açýk veya sadece arkadaþlarýna özel olarak paylaþabilirler."
+};
+
 builder.Services.AddSwaggerGen(opt =>
 {
-    var info = new OpenApiInfo()
-    {
-        Title = "Kitaplýk Arþiv API  Dökümaný",
-        Version = "v1",
-        Description = "Bu projede kullanýcýlar üye olma ve giriþ yapma iþlemlerini gerçekleþtirebilir. Giriþ yapan kullanýcýlar kitap ekleyebilir ve diðer kullanýcýlarý arkadaþ olarak ekleyebilirler. Ayrýca, kullanýcýlar kitaplarla ilgili notlar ekleyebilir ve bu notlarý herkese açýk veya sadece arkadaþlarýna özel olarak paylaþabilirler."
-    };
-
     opt.SwaggerDoc("v1", info);
 
     var xmlFile = $"UnTitledBook.Api.xml";
@@ -76,14 +76,14 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
+//{
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", info.Title);
+});
+//}
 
 
 app.UseHttpsRedirection();

@@ -42,8 +42,6 @@ namespace UnTitledBook.Infrastructure
             }).AddEntityFrameworkStores<AppDBContext>()
               .AddDefaultTokenProviders();
 
-
-
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
